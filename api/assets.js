@@ -1,19 +1,20 @@
 export default async function handler(req, res) {
   try {
-    // ALTIN (Truncgil)
-    const goldRes = await fetch("https://finans.truncgil.com/today.json");
+    // ---- ALTIN (GenelPara) ----
+    const goldRes = await fetch("https://api.genelpara.com/embed/altin.json");
     const goldJson = await goldRes.json();
 
-    const gramData = goldJson["Gram Altın"];
-    const sanitized = gramData.Satis.replace(/\./g, "").replace(",", ".");
-    const goldPrice = parseFloat(sanitized);
+    const gram = goldJson.GA;
+    const goldPrice = parseFloat(
+      gram.satis.replace(".", "").replace(",", ".")
+    );
 
-    // USD
+    // ---- USD ----
     const usdRes = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
     const usdJson = await usdRes.json();
     const usdPrice = usdJson.rates.TRY;
 
-    // BTC
+    // ---- BTC ----
     const btcRes = await fetch(
       "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
     );
