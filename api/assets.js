@@ -1,12 +1,12 @@
 export default async function handler(req, res) {
   try {
-    // ALTIN
-    const goldRes = await fetch("https://hasanadiguzel.com.tr/api/altin");
+    // ALTIN (Truncgil)
+    const goldRes = await fetch("https://finans.truncgil.com/today.json");
     const goldJson = await goldRes.json();
-    const gram = goldJson.result.data.find(x => x.name === "Gram Altın");
-    const goldPrice = parseFloat(
-      gram.selling.replace(/\./g, "").replace(",", ".")
-    );
+
+    const gramData = goldJson["Gram Altın"];
+    const sanitized = gramData.Satis.replace(/\./g, "").replace(",", ".");
+    const goldPrice = parseFloat(sanitized);
 
     // USD
     const usdRes = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
