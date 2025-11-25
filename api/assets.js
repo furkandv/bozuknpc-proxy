@@ -1,46 +1,44 @@
 export default async function handler(req, res) {
   try {
-    const goldRes = await fetch("https://finans.truncgil.com/v4/today.json");
-    const goldJson = await goldRes.json();
+    // TEK API: Truncgil v4
+    const response = await fetch("https://finans.truncgil.com/v4/today.json");
+    const data = await response.json();
 
-    const gram = goldJson["Gram Altın"];
-
-    // "Satış" veya "Satis" olabilir → IKISINI DE DESTEKLE
-    const rawGold =
-      gram["Satış"] ??
-      gram["Satis"] ??
-      gram["satis"] ??
-      gram["satış"];
-
-    if (!rawGold) {
-      throw new Error("ALTIN fiyatı JSON içinde bulunamadı");
+    // GRAM ALTIN (GRA -> Selling)
+    const goldTry = data?.GRA?.Selling;
+    if (typeof goldTry !== "number") {
+      throw new Error("Gram altın fiyatı (GRA.Selling) bulunamadı");
     }
 
-    const goldPrice = parseFloat(rawGold.replace(/\./g, "").replace(",", "."));
+    // USD/TL (USD -> Selling)
+    const usdTry = data?.USD?.Selling;
+    if (typeof usdTry !== "number") {
+      throw new Error("USD/TL kuru (USD.Selling) bulunamadı");
+    }
 
-    // USD
-    const usdRes = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
-    const usdJson = await usdRes.json();
-    const usdPrice = usdJson.rates.TRY;
+    // BTC/TRY (BTC -> TRY_Price veya Selling)
+    const btcTry =
+      typeof data?.BTC?.TRY_Price === "number"
+        ? data.BTC.TRY_Price
+        : data?.BTC?.Selling;
 
-    // BTC
-    const btcRes = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
-    const btcJson = await btcRes.json();
-    const btcUsd = parseFloat(btcJson.price);
-    const btcTry = btcUsd * usdPrice;
+    if (typeof btcTry !== "number") {
+      throw new Error("BTC fiyatı (BTC.TRY_Price / BTC.Selling) bulunamadı");
+    }
 
-    res.status(200).json({
+    // Flutter için temiz JSON dön
+    return res.status(200).json({
       success: true,
       assets: {
-        gram_altin: goldPrice,
-        usd: usdPrice,
-        btc: btcTry
-      }
+        gram_altin: goldTry,
+        usd: usdTry,
+        btc: btcTry,
+      },
     });
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: err.toString()
+      error: err.toString(),
     });
   }
 }
